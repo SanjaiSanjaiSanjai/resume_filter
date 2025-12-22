@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Resume Filtering System - Efficiently filter and search through resumes">
+    <title>Resume Filtering System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>📄 Resume Filtering System</h1>
+            <p class="subtitle">Upload and filter resumes with intelligent keyword search</p>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Upload Section -->
+            <section class="card upload-section">
+                <h2>📤 Upload Resumes</h2>
+                <p class="section-description">Select one or more resume files (PDF or DOCX format)</p>
+                
+                <form id="uploadForm">
+                    <div class="file-input-wrapper">
+                        <input 
+                            type="file" 
+                            id="fileInput" 
+                            name="files" 
+                            multiple 
+                            accept=".pdf,.docx"
+                            required
+                        >
+                        <label for="fileInput" class="file-label">
+                            <span id="fileLabel">Choose Files</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload Resumes</button>
+                </form>
+                
+                <div id="uploadStatus" class="status-message"></div>
+            </section>
+
+            <!-- Filter Section -->
+            <section class="card filter-section">
+                <h2>🔍 Filter Resumes</h2>
+                <p class="section-description">Enter keywords separated by commas (e.g., Python, Django, Machine Learning)</p>
+                
+                <form id="filterForm">
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            id="keywordsInput" 
+                            placeholder="Enter keywords (comma-separated)" 
+                            required
+                        >
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+                </form>
+                
+                <div id="filterStatus" class="status-message"></div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="card results-section" id="resultsSection" style="display: none;">
+                <h2>📊 Search Results</h2>
+                <div id="resultsContainer"></div>
+            </section>
+
+            <!-- All Resumes Section -->
+            <section class="card resumes-list-section">
+                <div class="section-header">
+                    <h2>📋 Uploaded Resumes</h2>
+                    <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+                </div>
+                <div id="resumesList"></div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2025 Resume Filtering System | Built with FastAPI & Python</p>
+        </footer>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="spinner-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
