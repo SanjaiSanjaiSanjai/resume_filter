@@ -30,7 +30,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Constants
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "/tmp/uploads"  # Use /tmp for Vercel serverless compatibility
 ALLOWED_EXTENSIONS = {".pdf", ".docx"}
 
 # Ensure upload directory exists
