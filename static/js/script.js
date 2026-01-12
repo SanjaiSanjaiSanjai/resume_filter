@@ -125,7 +125,12 @@ async function handleFilter() {
 
         if (response.ok) {
             displayResults(data);
-            showStatus(filterStatus, `✅ ${data.message}`, 'success');
+            // Check if no results found (0 matches)
+            if (data.matched_resumes.length === 0) {
+                showStatus(filterStatus, `❌ ${data.message}`, 'error');
+            } else {
+                showStatus(filterStatus, `✅ ${data.message}`, 'success');
+            }
         } else {
             showStatus(filterStatus, `❌ Error: ${data.detail}`, 'error');
         }
