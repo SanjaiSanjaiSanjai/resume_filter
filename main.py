@@ -5,7 +5,6 @@ Main application file with API endpoints
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -16,9 +15,8 @@ from pydantic import BaseModel
 
 from utils.parser import ResumeParser
 
-# Base directory for static/templates (works when Vercel runs from different cwd)
+# Base directory for templates (static files served by Vercel CDN from public/)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(BASE_DIR, "static")
 TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
 # Initialize FastAPI app
@@ -27,6 +25,19 @@ app = FastAPI(
     description="A web-based resume filtering application",
     version="1.0.0"
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch unhandled exceptions so the serverless process doesn't crash (avoids FUNCTION_INVOCATION_FAILED)."""
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "type": type(exc).__name__},
+    )
 
 # CORS configuration
 app.add_middleware(
@@ -43,8 +54,8 @@ app.add_middleware(
     secret_key=os.environ.get("RESUME_FILTER_SECRET_KEY", "change-this-secret"),
 )
 
-# Mount static files (absolute path for Vercel serverless)
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+# Static files: served by Vercel CDN from public/static/ (see public/ folder)
+# Do not use app.mount("/static", ...) on Vercel to avoid FUNCTION_INVOCATION_FAILED.
 
 # Templates (absolute path for Vercel serverless)
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
