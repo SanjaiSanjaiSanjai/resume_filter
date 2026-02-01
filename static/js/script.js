@@ -26,6 +26,7 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 document.addEventListener('DOMContentLoaded', () => {
     loadResumes();
     setupEventListeners();
+    setupUserProfileToggle();
 });
 
 // Setup Event Listeners
@@ -56,6 +57,60 @@ function setupEventListeners() {
     refreshBtn.addEventListener('click', () => {
         loadResumes();
     });
+}
+
+// Profile dropdown: open on icon click, show name + logout (no redirect until logout)
+function setupUserProfileToggle() {
+    const profileToggle = document.getElementById('profileToggle');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const profileLogout = document.getElementById('profileLogout');
+
+    if (!profileToggle || !profileDropdown) return;
+
+    const openClass = 'open';
+
+    const setDropdownOpen = (open) => {
+        if (open) {
+            profileDropdown.classList.add(openClass);
+            profileDropdown.setAttribute('aria-hidden', 'false');
+            profileToggle.setAttribute('aria-expanded', 'true');
+        } else {
+            profileDropdown.classList.remove(openClass);
+            profileDropdown.setAttribute('aria-hidden', 'true');
+            profileToggle.setAttribute('aria-expanded', 'false');
+        }
+    };
+
+    profileToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setDropdownOpen(!profileDropdown.classList.contains(openClass));
+    });
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!profileDropdown.classList.contains(openClass)) return;
+        if (!profileDropdown.contains(e.target) && !profileToggle.contains(e.target)) {
+            setDropdownOpen(false);
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setDropdownOpen(false);
+    });
+
+    // Logout via fetch (no full-page redirect to /logout), then go to signup
+    if (profileLogout) {
+        profileLogout.addEventListener('click', async () => {
+            setDropdownOpen(false);
+            try {
+                const res = await fetch(`${API_BASE}/logout`, { method: 'GET', credentials: 'include', redirect: 'manual' });
+                // Session cleared; navigate to signup (only redirect is to signup after logout)
+                window.location.href = '/signup';
+            } catch {
+                window.location.href = '/signup';
+            }
+        });
+    }
 }
 
 // Handle Resume Upload

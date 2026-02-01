@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,29 @@
     <title>Resume Filtering System</title>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
-        <header>
-            <h1>📄 Resume Filtering System</h1>
-            <p class="subtitle">Upload and filter resumes with intelligent keyword search</p>
+        <header class="header-with-menu">
+            <div class="header-main">
+                <h1>📄 Resume Filtering System</h1>
+                <p class="subtitle">Upload and filter resumes with intelligent keyword search</p>
+            </div>
+            <div class="header-actions">
+                <div class="profile-menu">
+                    <button id="profileToggle" class="profile-icon-btn" type="button" aria-label="User menu" aria-expanded="false" aria-haspopup="true">
+                        <span class="profile-avatar" aria-hidden="true">{{ user.username[0]|upper }}</span>
+                    </button>
+                    <div id="profileDropdown" class="profile-dropdown" role="menu" aria-label="User menu" aria-hidden="true">
+                        <div class="profile-dropdown-user">
+                            <span class="profile-dropdown-avatar">{{ user.username[0]|upper }}</span>
+                            <span class="profile-dropdown-name">{{ user.username }}</span>
+                        </div>
+                        <button type="button" class="profile-dropdown-logout" role="menuitem" id="profileLogout">Logout</button>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <!-- Main Content -->
@@ -21,44 +39,33 @@
             <section class="card upload-section">
                 <h2>📤 Upload Resumes</h2>
                 <p class="section-description">Select one or more resume files (PDF or DOCX format)</p>
-                
+
                 <form id="uploadForm">
                     <div class="file-input-wrapper">
-                        <input 
-                            type="file" 
-                            id="fileInput" 
-                            name="files" 
-                            multiple 
-                            accept=".pdf,.docx"
-                            required
-                        >
+                        <input type="file" id="fileInput" name="files" multiple accept=".pdf,.docx" required>
                         <label for="fileInput" class="file-label">
                             <span id="fileLabel">Choose Files</span>
                         </label>
                     </div>
                     <button type="submit" class="btn btn-primary">Upload Resumes</button>
                 </form>
-                
+
                 <div id="uploadStatus" class="status-message"></div>
             </section>
 
             <!-- Filter Section -->
             <section class="card filter-section">
                 <h2>🔍 Filter Resumes</h2>
-                <p class="section-description">Enter keywords separated by commas (e.g., Python, Django, Machine Learning)</p>
-                
+                <p class="section-description">Enter keywords separated by commas (e.g., Python, Django, Machine
+                    Learning)</p>
+
                 <form id="filterForm">
                     <div class="input-group">
-                        <input 
-                            type="text" 
-                            id="keywordsInput" 
-                            placeholder="Enter keywords (comma-separated)" 
-                            required
-                        >
+                        <input type="text" id="keywordsInput" placeholder="Enter keywords (comma-separated)" required>
                         <button type="submit" class="btn btn-primary">Search</button>
                     </div>
                 </form>
-                
+
                 <div id="filterStatus" class="status-message"></div>
             </section>
 
@@ -91,4 +98,5 @@
 
     <script src="/static/js/script.js"></script>
 </body>
+
 </html>

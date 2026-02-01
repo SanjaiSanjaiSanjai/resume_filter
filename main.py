@@ -3,11 +3,12 @@ Resume Filtering System - FastAPI Backend
 Main application file with API endpoints
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Form
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi import Request
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from typing import List
 import os
 import shutil
@@ -23,6 +24,21 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5500"],  # Allow requests from localhost:5500
+    allow_credentials=True,  # Allow cookies and authentication headers
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
+
+# Session configuration (for signup)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("RESUME_FILTER_SECRET_KEY", "change-this-secret"),
+)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -32,6 +48,9 @@ templates = Jinja2Templates(directory="templates")
 # Constants
 UPLOAD_DIR = "/tmp/uploads"  # Use /tmp for Vercel serverless compatibility
 ALLOWED_EXTENSIONS = {".pdf", ".docx"}
+
+# Simple user management (in-memory)
+REGISTERED_USERS: dict[str, str] = {}
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -68,10 +87,60 @@ def get_uploaded_resumes() -> List[str]:
 
 
 # API Endpoints
+@app.get("/signup", response_class=HTMLResponse)
+async def signup_page(request: Request):
+    """Render the signup page"""
+    user = request.session.get("user")
+    if user:
+        return RedirectResponse(url="/", status_code=302)
+    return templates.TemplateResponse("signup.html", {"request": request, "error": None})
+
+
+@app.post("/signup")
+async def signup(request: Request, username: str = Form(...), password: str = Form(...), confirm_password: str = Form(...)):
+    """Handle signup form submission"""
+    if password != confirm_password:
+        return templates.TemplateResponse(
+            "signup.html",
+            {"request": request, "error": "Passwords do not match"},
+            status_code=400,
+        )
+
+    if not username.strip():
+        return templates.TemplateResponse(
+            "signup.html",
+            {"request": request, "error": "Username is required"},
+            status_code=400,
+        )
+
+    if username in REGISTERED_USERS:
+        return templates.TemplateResponse(
+            "signup.html",
+            {"request": request, "error": "Username already exists"},
+            status_code=400,
+        )
+
+    # Store user and log them in
+    REGISTERED_USERS[username] = password
+    request.session["user"] = {"username": username}
+    return RedirectResponse(url="/", status_code=302)
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    """Log the user out and redirect to signup page"""
+    request.session.clear()
+    return RedirectResponse(url="/signup", status_code=302)
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    """Serve the main HTML page"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    """Serve the main HTML page (protected)"""
+    user = request.session.get("user")
+    if not user:
+        return RedirectResponse(url="/signup", status_code=302)
+
+    return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
 
 @app.post("/upload")

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sign Up - Resume Filtering System">
+    <title>Sign Up | Resume Filtering System</title>
+    <link rel="stylesheet" href="/static/css/signup.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Create Account</h1>
+            <p class="subtitle">Join the Resume Filtering System today</p>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2>New User Registration</h2>
+
+                {% if error %}
+                <div class="status-message error">{{ error }}</div>
+                {% endif %}
+
+                <form method="post" action="/signup">
+                    <div class="form-container">
+                        <div class="form-field">
+                            <label for="signup-username">Username</label>
+                            <input id="signup-username" type="text" name="username" placeholder="Choose a username"
+                                required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="signup-password">Password</label>
+                            <input id="signup-password" type="password" name="password" placeholder="Create a password"
+                                required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="signup-confirm-password">Confirm Password</label>
+                            <input id="signup-confirm-password" type="password" name="confirm_password"
+                                placeholder="Confirm your password" required>
+                        </div>
+
+                        <div class="form-button">
+                            <button type="submit" class="signup-submit">Sign Up</button>
+                        </div>
+                    </div>
+                </form>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Resume Filtering System | Built with FastAPI &amp; Python</p>
+        </footer>
+    </div>
+</body>
+
+</html>
