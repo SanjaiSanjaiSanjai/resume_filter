@@ -16,6 +16,10 @@ from pydantic import BaseModel
 
 from utils.parser import ResumeParser
 
+# Base directory for static/templates (works when Vercel runs from different cwd)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -39,11 +43,11 @@ app.add_middleware(
     secret_key=os.environ.get("RESUME_FILTER_SECRET_KEY", "change-this-secret"),
 )
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount static files (absolute path for Vercel serverless)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Templates
-templates = Jinja2Templates(directory="templates")
+# Templates (absolute path for Vercel serverless)
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # Constants
 UPLOAD_DIR = "/tmp/uploads"  # Use /tmp for Vercel serverless compatibility
@@ -52,8 +56,11 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx"}
 # Simple user management (in-memory)
 REGISTERED_USERS: dict[str, str] = {}
 
-# Ensure upload directory exists
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# Ensure upload directory exists (skip on import if /tmp not writable in some envs)
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+except OSError:
+    pass
 
 
 # Pydantic models
