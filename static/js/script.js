@@ -17,6 +17,12 @@ const filterStatus = document.getElementById('filterStatus');
 const resultsSection = document.getElementById('resultsSection');
 const resultsContainer = document.getElementById('resultsContainer');
 
+const pdfViewerSection = document.getElementById('pdfViewerSection');
+const pdfViewerFrame = document.getElementById('pdfViewerFrame');
+const pdfViewerTitle = document.getElementById('pdfViewerTitle');
+const openPdfNewTabLink = document.getElementById('openPdfNewTabLink');
+const closePdfViewerBtn = document.getElementById('closePdfViewerBtn');
+
 const resumesList = document.getElementById('resumesList');
 const refreshBtn = document.getElementById('refreshBtn');
 
@@ -57,6 +63,13 @@ function setupEventListeners() {
     refreshBtn.addEventListener('click', () => {
         loadResumes();
     });
+
+    // Close PDF viewer
+    if (closePdfViewerBtn) {
+        closePdfViewerBtn.addEventListener('click', () => {
+            hidePdfViewer();
+        });
+    }
 }
 
 // Profile dropdown: open on icon click, show name + logout (no redirect until logout)
@@ -153,7 +166,11 @@ async function handleUpload() {
 
 // Handle Resume Filter
 async function handleFilter() {
+    // alert('handleFilter function called!');
+    console.log('handleFilter started');
+    
     const keywordsText = keywordsInput.value.trim();
+    console.log('Keywords text:', keywordsText);
 
     if (!keywordsText) {
         showStatus(filterStatus, 'Please enter at least one keyword', 'error');
@@ -165,9 +182,13 @@ async function handleFilter() {
         .split(',')
         .map(k => k.trim())
         .filter(k => k.length > 0);
+    
+    console.log('Parsed keywords:', keywords);
 
     try {
         showLoading(true);
+        console.log('Making API call to:', `${API_BASE}/filter`);
+        
         const response = await fetch(`${API_BASE}/filter`, {
             method: 'POST',
             headers: {
@@ -176,9 +197,12 @@ async function handleFilter() {
             body: JSON.stringify({ keywords })
         });
 
+        console.log('API response status:', response.status);
         const data = await response.json();
+        console.log('API response data:', data);
 
         if (response.ok) {
+            // alert('About to call displayResults');
             displayResults(data);
             // Check if no results found (0 matches)
             if (data.matched_resumes.length === 0) {
@@ -187,9 +211,11 @@ async function handleFilter() {
                 showStatus(filterStatus, `✅ ${data.message}`, 'success');
             }
         } else {
+            alert('API call failed: ' + data.detail);
             showStatus(filterStatus, `❌ Error: ${data.detail}`, 'error');
         }
     } catch (error) {
+        alert('Filter failed with error: ' + error.message);
         showStatus(filterStatus, `❌ Filter failed: ${error.message}`, 'error');
     } finally {
         showLoading(false);
@@ -198,12 +224,15 @@ async function handleFilter() {
 
 // Display Filter Results
 function displayResults(data) {
+    // alert('displayResults function called! Check console for details.');
+    console.log('displayResults called with:', data);
     resultsContainer.innerHTML = '';
 
     if (data.matched_resumes.length === 0) {
         resultsContainer.innerHTML = '<div class="no-data">No matching resumes found</div>';
     } else {
-        data.matched_resumes.forEach(resume => {
+        data.matched_resumes.forEach((resume, index) => {
+            console.log(`Processing resume ${index}:`, resume);
             const resultItem = document.createElement('div');
             resultItem.className = 'result-item';
 
@@ -211,22 +240,48 @@ function displayResults(data) {
                 .map(kw => `<span class="keyword-badge">${kw}</span>`)
                 .join('');
 
+            const viewUrl = `${API_BASE}/resumes/view/${encodeURIComponent(resume.filename)}`;
+            console.log('Generated viewUrl:', viewUrl);
+
             resultItem.innerHTML = `
                 <div class="result-filename">
-                    📄 ${resume.filename}
-                    <span class="result-score">Score: ${resume.score}</span>
+                    <div class="result-filename-row">
+                        <div class="result-filename-left">
+                            📄 <span class="result-filename-text">${escapeHtml(resume.filename)}</span>
+                            <span class="result-score">Score: ${resume.score}</span>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-open" data-view-url="${viewUrl}" title="Open Resume" style="background: red !important; color: white !important; padding: 10px 20px !important; font-size: 14px !important; font-weight: bold !important;">
+                            🔓 OPEN RESUME
+                        </button>
+                    </div>
                 </div>
                 <div class="result-keywords">
                     ${keywordBadges}
                 </div>
             `;
 
+            console.log('Generated HTML for result item:', resultItem.innerHTML);
+
+            const openBtn = resultItem.querySelector('.btn-open');
+            console.log('Found open button:', !!openBtn);
+            if (openBtn) {
+                openBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Open button clicked for:', resume.filename);
+                    // Compulsory: always open in the embedded viewer (do not navigate away).
+                    showPdfViewer(resume.filename, { required: true });
+                });
+            }
+
             resultsContainer.appendChild(resultItem);
+            console.log(`Added result item ${index} to container`);
         });
     }
 
     resultsSection.style.display = 'block';
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    console.log('displayResults completed');
 }
 
 // Load All Resumes
@@ -253,14 +308,76 @@ function displayResumesList(resumes) {
             const resumeItem = document.createElement('div');
             resumeItem.className = 'resume-item';
 
+            const viewUrl = `${API_BASE}/resumes/view/${encodeURIComponent(filename)}`;
+
             resumeItem.innerHTML = `
-                <span class="resume-name">📄 ${filename}</span>
-                <button class="btn btn-delete" onclick="deleteResume('${filename}')">Delete</button>
+                <span class="resume-name">📄 <a href="${viewUrl}" class="resume-link" data-filename="${escapeHtml(filename)}">${escapeHtml(filename)}</a></span>
+                <button class="btn btn-delete" type="button">Delete</button>
             `;
+
+            const deleteBtn = resumeItem.querySelector('.btn-delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => deleteResume(filename));
+            }
+
+            const link = resumeItem.querySelector('.resume-link');
+            if (link) {
+                link.addEventListener('click', (e) => {
+                    const handled = showPdfViewer(filename);
+                    if (handled) e.preventDefault();
+                });
+            }
 
             resumesList.appendChild(resumeItem);
         });
     }
+}
+
+function showPdfViewer(filename, { required = false } = {}) {
+    const url = `${API_BASE}/resumes/view/${encodeURIComponent(filename)}`;
+    console.log('Attempting to show PDF viewer for:', filename, 'URL:', url);
+
+    if (!pdfViewerSection || !pdfViewerFrame || !pdfViewerTitle || !openPdfNewTabLink) {
+        console.error('PDF viewer elements not found:', {
+            pdfViewerSection: !!pdfViewerSection,
+            pdfViewerFrame: !!pdfViewerFrame,
+            pdfViewerTitle: !!pdfViewerTitle,
+            openPdfNewTabLink: !!openPdfNewTabLink
+        });
+        if (required) {
+            alert('PDF viewer is not available on this page. Please hard refresh (Ctrl+F5).');
+            return false;
+        }
+        console.warn('PDF viewer elements not found; opening in new tab instead.');
+        window.open(url, '_blank');
+        return false;
+    }
+
+    pdfViewerTitle.textContent = filename;
+    openPdfNewTabLink.href = url;
+    pdfViewerFrame.src = url;
+
+    pdfViewerSection.style.display = 'block';
+    pdfViewerSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    console.log('PDF viewer opened successfully for:', filename);
+    return true;
+}
+
+function hidePdfViewer() {
+    if (!pdfViewerSection || !pdfViewerFrame || !pdfViewerTitle || !openPdfNewTabLink) return;
+    pdfViewerSection.style.display = 'none';
+    pdfViewerTitle.textContent = '';
+    openPdfNewTabLink.href = '#';
+    pdfViewerFrame.src = 'about:blank';
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
 }
 
 // Delete Resume

@@ -75,6 +75,21 @@
                 <div id="resultsContainer"></div>
             </section>
 
+            <!-- PDF Viewer (opens when clicking a resume name) -->
+            <section class="card pdf-viewer-section" id="pdfViewerSection" style="display: none;">
+                <div class="section-header">
+                    <h2>📄 Resume Preview</h2>
+                    <button id="closePdfViewerBtn" class="btn btn-secondary" type="button">Close</button>
+                </div>
+                <div class="pdf-viewer-meta">
+                    <div id="pdfViewerTitle" class="pdf-viewer-title"></div>
+                    <div class="pdf-viewer-actions">
+                        <a id="openPdfNewTabLink" class="btn btn-primary" href="#" target="_blank" rel="noopener">Open in new tab</a>
+                    </div>
+                </div>
+                <iframe id="pdfViewerFrame" class="pdf-viewer-frame" title="Resume PDF viewer"></iframe>
+            </section>
+
             <!-- All Resumes Section -->
             <section class="card resumes-list-section">
                 <div class="section-header">
@@ -96,7 +111,7 @@
         <div class="spinner"></div>
     </div>
 
-    <script src="/static/js/script.js"></script>
+    <script src="/static/js/script.js?v=3.0"></script>
 </body>
 
 </html>
